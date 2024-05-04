@@ -30,6 +30,10 @@ FROM (
   WHERE total_paid != 0.00
 )
 ```
+Results:
+
+![Query 5 Output](images/q5_output.png)
+
 ### 6) 2nd most popular chemotherapy drug exposure time and observation time
 No Optimization:
 ```
@@ -90,3 +94,6 @@ SELECT
     ROUND(AVG(observation_time),2) avg_observation_time_in_days
 FROM calc_date_diff
 ```
+Results:
+
+![Query 6 Output](images/q6_output.png)
