@@ -2,6 +2,93 @@
 
 ## Queries
 
+### 1) 5 top and bottom care sites that offer chemotherapy based on the number of patients
+No Optimization:
+```
+(SELECT
+  DISTINCT care_site_id,
+  COUNT(DISTINCT p.person_id) chemo_num_patients
+  FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+  JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.provider` pro
+    ON p.provider_id = pro.provider_id
+  WHERE p.procedure_concept_id = 4289151
+  GROUP BY 1
+  ORDER BY 2 DESC
+  LIMIT 5)
+
+UNION ALL
+
+(SELECT
+  DISTINCT care_site_id,
+  COUNT(DISTINCT p.person_id) chemo_num_patients
+  FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+  JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.provider` pro
+    ON p.provider_id = pro.provider_id
+  WHERE p.procedure_concept_id = 4289151
+  GROUP BY 1
+  ORDER BY 2
+  LIMIT 5)
+```
+
+With Optimization:
+```
+WITH chemo_sites AS (
+  SELECT
+    care_site_id,
+    COUNT(DISTINCT p.person_id) AS chemo_num_patients
+  FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+  JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.provider` pro
+    ON p.provider_id = pro.provider_id
+  WHERE p.procedure_concept_id = 4289151
+  GROUP BY care_site_id
+)
+SELECT care_site_id, chemo_num_patients FROM (
+  SELECT * FROM chemo_sites
+  ORDER BY chemo_num_patients DESC
+  LIMIT 5
+) AS top_5
+UNION ALL
+SELECT care_site_id, chemo_num_patients FROM (
+  SELECT * FROM chemo_sites
+  ORDER BY chemo_num_patients
+  LIMIT 5
+) AS bottom_5;
+)
+```
+Results:
+
+![Query 1 Output](images/q1_output.png)
+
+### 2) Providers that provide chemotherapy
+No Optimization:
+```
+SELECT npi,
+  COUNT(DISTINCT p.person_id) chemo_cnt_patients
+FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.provider` pro
+  ON p.provider_id = pro.provider_id
+WHERE p.procedure_concept_id = 4289151
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 20
+```
+
+With Optimization:
+```
+SELECT npi,
+  COUNT(DISTINCT p.person_id) chemo_cnt_patients
+FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.provider` pro
+  ON p.provider_id = pro.provider_id
+WHERE p.procedure_concept_id = 4289151
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 20
+```
+Results:
+
+![Query 2 Output](images/q2_output.png)
+
 ### 5) Max and min percentage of how much patient and provider covers
 No Optimization:
 ```
