@@ -89,6 +89,83 @@ Results:
 
 ![Query 2 Output](images/q2_output.png)
 
+### 3) Top 10 chemotherapy procedures
+No optimization:
+```
+SELECT
+  concept_id,
+  concept_name,
+  vocabulary_id,
+  COUNT(DISTINCT person_id) AS num_patients
+FROM 
+  `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` AS p
+JOIN 
+  `bigquery-public-data.cms_synthetic_patient_data_omop.concept` AS c
+  ON p.procedure_concept_id = c.concept_id
+WHERE 
+  LOWER(c.concept_name) LIKE '%chemotherapy%'
+GROUP BY 
+  1, 2, 3
+ORDER BY 
+  num_patients DESC
+LIMIT 10;
+```
+
+With Optimization
+```SELECT
+  concept_id,
+  concept_name,
+  vocabulary_id,
+  COUNT(Distinct person_id) num_patients
+FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.concept` c
+  ON p.procedure_concept_id = c.concept_id
+WHERE LOWER(concept_name) LIKE '%chemotherapy%'
+GROUP BY 1,2,3
+ORDER BY 4 DESC
+LIMIT 10
+```
+
+Results:
+
+![Query 3 Output](images/q3_output.png)
+
+### 4) Top 10 drugs used in chemotherapy
+No optimization:
+```
+SELECT
+    c.concept_name AS drug,
+    COUNT(DISTINCT d.drug_exposure_id) AS chemo_num_visits
+FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.drug_exposure` d
+    ON p.visit_occurrence_id = d.visit_occurrence_id
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.concept` c
+    ON c.concept_id = d.drug_concept_id
+WHERE p.procedure_concept_id = 4289151
+GROUP BY 1
+ORDER BY chemo_num_visits DESC
+LIMIT 10;
+```
+
+With Optimization
+```
+SELECT
+    concept_name AS drug,
+    COUNT(DISTINCT drug_exposure_id) chemo_num_visits
+FROM `bigquery-public-data.cms_synthetic_patient_data_omop.procedure_occurrence` p
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.drug_exposure` d
+    ON p.visit_occurrence_id = d.visit_occurrence_id
+JOIN `bigquery-public-data.cms_synthetic_patient_data_omop.concept` c
+    ON c.concept_id = d.drug_concept_id
+WHERE p.procedure_concept_id = 4289151
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10
+```
+Results:
+
+![Query 4 Output](images/q4_output.png)
+
 ### 5) Max and min percentage of how much patient and provider covers
 No Optimization:
 ```
